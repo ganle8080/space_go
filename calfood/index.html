@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>饭量计算器</title>
+    <style>
+        /* 商品样式 */
+        .item {
+            width: 120px;  /* 宽度120px */
+            height: 120px; /* 高度120px */
+            border: 1px solid #ccc;
+            margin: 5px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* 内容垂直分布 */
+            align-items: center; /* 内容水平居中 */
+            padding: 8px;
+            box-sizing: border-box; /* 包含padding在内计算尺寸 */
+            position: relative; /* 为按钮定位做准备 */
+        }
+
+        /* 商品图片样式 */
+        .item img {
+            width: 80px;  /* 图片宽度 */
+            height: 80px; /* 图片高度 */
+            object-fit: cover; /* 保持比例填充 */
+            border-radius: 3px;
+            margin-bottom: 5px;
+        }
+
+        /* 商品信息样式 */
+        .item-info {
+            text-align: center;
+            font-size: 12px;
+            width: 100%;
+        }
+
+        /* 商品价格样式 */
+        .item-price {
+            font-weight: bold;
+            color: #e4393c;
+            margin: 3px 0;
+        }
+
+        /* 商品库存样式 */
+        .item-stock {
+            font-size: 10px;
+            color: #666;
+        }
+
+        /* 添加购物车按钮样式 */
+        .add-to-cart {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            background-color: #ff6700;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+            padding: 0;
+        }
+
+        /* 商品容器样式 */
+        #items-container {
+            display: flex;
+            flex-wrap: wrap; /* 允许换行 */
+            gap: 10px; /* 间距 */
+        }
+
+        /* 购物车样式 */
+        #cart-container {
+            margin-top: 30px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f5f5f5;
+            width: 300px; /* 购物车宽度 */
+        
+        }
+
+        #cart-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border: 1px solid #eee;
+            border-radius: 3px;
+            background-color: white;
+        }
+
+        .cart-item-info {
+            flex: 1;
+        }
+
+        .cart-item-price {
+            color: #e4393c;
+            font-weight: bold;
+        }
+
+        .cart-item-remove {
+            background-color: #ff4d4f;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 2px 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* 总价样式 */
+        #cart-total {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>冷知识：人在饿的时候，饱食度一般只有20点</h1>
+    <div id="cart-container">
+        <div id="cart-items"></div>
+        <div id="cart-total">
+            <span>饱食度:</span>
+            <span id="total-price">0.00</span>
+        </div>
+    </div>
+    <!-- <div>
+        <p>姓名: <span id="name"></span></p>
+        <p>年龄: <span id="age"></span></p>
+        <p>城市: <span id="city"></span></p>
+        <p>技能: <span id="skills"></span></p>
+    </div> -->
+    <!-- <div id="myButton">点击我</div> -->
+
+    <h1>想吃点啥！！！</h1>
+    <div id="items-container"></div>
+
+    <script>
+        // 商品数据
+        const products = [
+            { 
+                id: 1, 
+                name: "米饭", 
+                price: 25, 
+                image: "https://img1.baidu.com/it/u=1524660024,3627038023&fm=253&fmt=auto&app=120&f=JPEG?w=533&h=479" 
+            },
+            { 
+                id: 2, 
+                name: "小米粥", 
+                price: 15, 
+                image: "https://img0.baidu.com/it/u=566581481,1195177935&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=667" 
+            }
+        ];
+
+        // 购物车数据
+        let cart = [];
+
+        // 获取DOM元素
+        const itemsContainer = document.getElementById("items-container");
+        const cartItemsContainer = document.getElementById("cart-items");
+        const totalPriceElement = document.getElementById("total-price");
+
+        // 渲染商品列表
+        function renderProducts() {
+            itemsContainer.innerHTML = "";
+            products.forEach(product => {
+                const itemDiv = document.createElement("div");
+                itemDiv.className = "item";
+
+                const img = document.createElement("img");
+                img.src = product.image;
+                img.alt = product.name;
+                itemDiv.appendChild(img);
+
+                const infoDiv = document.createElement("div");
+                infoDiv.className = "item-info";
+
+                const nameSpan = document.createElement("span");
+                nameSpan.textContent ="饱食度：";
+                infoDiv.appendChild(nameSpan);
+
+                const priceSpan = document.createElement("span");
+                priceSpan.className = "item-price";
+                priceSpan.textContent = `${product.price}`;
+                infoDiv.appendChild(priceSpan);
+
+                // const stockSpan = document.createElement("span");
+                // stockSpan.className = "item-stock";
+                // stockSpan.textContent = `库存: ${product.stock}`;
+                // infoDiv.appendChild(stockSpan);
+
+                itemDiv.appendChild(infoDiv);
+
+                const button = document.createElement("button");
+                button.className = "add-to-cart";
+                button.textContent = "+";
+                button.addEventListener("click", () => addToCart(product));
+                itemDiv.appendChild(button);
+
+                itemsContainer.appendChild(itemDiv);
+            });
+        }
+
+        // 添加到购物车
+        function addToCart(product) {
+            // 检查商品是否已在购物车
+            const existingItem = cart.find(item => item.id === product.id);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    quantity: 1
+                });
+            }
+            
+            renderCart();
+        }
+
+        // 从购物车移除商品
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            renderCart();
+        }
+
+        // 更新购物车商品数量
+        function updateCartItemQuantity(productId, quantity) {
+            const item = cart.find(item => item.id === productId);
+            if (item) {
+                item.quantity = quantity;
+                if (item.quantity <= 0) {
+                    removeFromCart(productId);
+                } else {
+                    renderCart();
+                }
+            }
+        }
+
+        // 渲染购物车
+        function renderCart() {
+            cartItemsContainer.innerHTML = "";
+            
+            if (cart.length === 0) {
+                cartItemsContainer.innerHTML = "<p>碗里面是空的！</p>";
+                totalPriceElement.textContent = "0.00";
+                return;
+            }
+            
+            let total = 0;
+            
+            cart.forEach(item => {
+                const cartItemDiv = document.createElement("div");
+                cartItemDiv.className = "cart-item";
+                
+                const infoDiv = document.createElement("div");
+                infoDiv.className = "cart-item-info";
+                
+                const nameSpan = document.createElement("span");
+                nameSpan.textContent = item.name;
+                infoDiv.appendChild(nameSpan);
+                
+                const quantitySpan = document.createElement("span");
+                quantitySpan.textContent = ` x${item.quantity}`;
+                infoDiv.appendChild(quantitySpan);
+                
+                cartItemDiv.appendChild(infoDiv);
+                
+                const priceSpan = document.createElement("span");
+                priceSpan.className = "cart-item-price";
+                priceSpan.textContent = `${(item.price * item.quantity).toFixed(2)}`;
+                cartItemDiv.appendChild(priceSpan);
+                
+                const removeButton = document.createElement("button");
+                removeButton.className = "cart-item-remove";
+                removeButton.textContent = "移除";
+                removeButton.addEventListener("click", () => removeFromCart(item.id));
+                cartItemDiv.appendChild(removeButton);
+                
+                cartItemsContainer.appendChild(cartItemDiv);
+                
+                total += item.price * item.quantity;
+            });
+            
+            totalPriceElement.textContent = `${total.toFixed(2)}`;
+        }
+
+        // 初始化
+        function init() {
+            // // 填充示例数据到页面顶部
+            // document.getElementById('name').textContent = "张三";
+            // document.getElementById('age').textContent = "30";
+            // document.getElementById('city').textContent = "北京";
+            // document.getElementById('skills').textContent = "HTML, CSS, JavaScript";
+            
+            renderProducts();
+        }
+
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+    <!-- <script id="jsonData" type="application/json">
+    {
+        "name": "张三",
+        "age": 30,
+        "city": "北京",
+        "skills": ["HTML", "CSS", "JavaScript"]
+    }
+    </script>
+
+    <script>
+        const jsonDataElement = document.getElementById('jsonData');
+        const jsonData = JSON.parse(jsonDataElement.textContent);
+
+        // 使用 textContent 或 innerText 插入数据
+        document.getElementById('name').textContent = jsonData.name;
+        document.getElementById('age').textContent = jsonData.age;
+        document.getElementById('city').textContent = jsonData.city;
+
+        // 处理数组（技能）
+        document.getElementById('skills').textContent = jsonData.skills.join(', ');
+    </script>
+    <script>
+        // 获取按钮元素
+        const button = document.getElementById("myButton");
+
+        // 或者使用箭头函数
+        button.addEventListener("click", () => {
+            console.log("按钮被点击了！");
+        });
+    </script> -->
+</body>
+
+</html>
